@@ -105,7 +105,6 @@ cdef dict DBTYPES = {
     'datetime': _mssql.SQLDATETIME,
     'date': _mssql.SQLDATETIME,
     'float': _mssql.SQLFLT8,
-    'bytes': _mssql.SQLBINARY,
     #Dump type for work vith None
     'NoneType': _mssql.SQLVARCHAR,
 }
@@ -114,16 +113,25 @@ cdef int py2db_type(py_type, value):
     if PY_MAJOR_VERSION == 3:
         if py_type == 'int':
             if value is not None and value >= -2147483648 and value <= 2147483647:  # -2^31 - 2^31-1
-                return _mssql.SQLINTN
+                return _mssql.SQLINTN,value
             else:
-                return _mssql.SQLINT8
+                return _mssql.SQLINT8,value
+        if py_type == 'tuple':
+            if value[0]=='binary':
+                return _mssql.SQLBINARY,value[1]
+            elif value[0]=='image':
+                return _mssql.SQLIMAGE,value[1]
     else:
         if py_type == 'int':
-            return _mssql.SQLINTN
+            return _mssql.SQLINTN,value
         if py_type == 'long':
-            return _mssql.SQLINT8
-
-    return DBTYPES[py_type]
+            return _mssql.SQLINT8,value
+        if py_type == 'tuple':
+            if value[0]=='binary':
+                return _mssql.SQLBINARY,value[1]
+            elif value[0]=='image':
+                return _mssql.SQLIMAGE,value[1]
+    return DBTYPES[py_type],value
 
 try:
     StandardError
@@ -422,7 +430,7 @@ cdef class Cursor:
 
             try:
                 type_name = param_type.__name__
-                db_type = py2db_type(type_name, param_value)
+                db_type, param_value = py2db_type(type_name, param_value)
             except (AttributeError, KeyError):
                 raise NotSupportedError('Unable to determine database type from python %s type' % type_name)
 
