@@ -109,29 +109,31 @@ cdef dict DBTYPES = {
     'NoneType': _mssql.SQLVARCHAR,
 }
 
+
 cdef int py2db_type(py_type, value):
     if PY_MAJOR_VERSION == 3:
         if py_type == 'int':
             if value is not None and value >= -2147483648 and value <= 2147483647:  # -2^31 - 2^31-1
-                return _mssql.SQLINTN,value
+                return _mssql.SQLINTN
             else:
-                return _mssql.SQLINT8,value
+                return _mssql.SQLINT8
         if py_type == 'tuple':
             if value[0]=='binary':
-                return _mssql.SQLBINARY,value[1]
+                return _mssql.SQLBINARY
             elif value[0]=='image':
-                return _mssql.SQLIMAGE,value[1]
+                return _mssql.SQLIMAGE
     else:
         if py_type == 'int':
-            return _mssql.SQLINTN,value
+            return _mssql.SQLINTN
         if py_type == 'long':
-            return _mssql.SQLINT8,value
+            return _mssql.SQLINT8
         if py_type == 'tuple':
             if value[0]=='binary':
-                return _mssql.SQLBINARY,value[1]
+                return _mssql.SQLBINARY
             elif value[0]=='image':
-                return _mssql.SQLIMAGE,value[1]
-    return DBTYPES[py_type],value
+                return _mssql.SQLIMAGE
+    return DBTYPES[py_type]
+
 
 try:
     StandardError
@@ -430,7 +432,10 @@ cdef class Cursor:
 
             try:
                 type_name = param_type.__name__
-                db_type, param_value = py2db_type(type_name, param_value)
+                db_type = py2db_type(type_name, param_value)
+                if type_name=='tuple':
+                    param_value = param_value[1]
+
             except (AttributeError, KeyError):
                 raise NotSupportedError('Unable to determine database type from python %s type' % type_name)
 
