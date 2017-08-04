@@ -105,6 +105,7 @@ cdef dict DBTYPES = {
     'datetime': _mssql.SQLDATETIME,
     'date': _mssql.SQLDATETIME,
     'float': _mssql.SQLFLT8,
+    'bytes': _mssql.SQLBINARY,
     #Dump type for work vith None
     'NoneType': _mssql.SQLVARCHAR,
 }
